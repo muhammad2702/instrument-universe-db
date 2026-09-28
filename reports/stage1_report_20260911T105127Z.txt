@@ -1,0 +1,74 @@
+==============================================================================
+STAGE 1 -- UNIVERSE CONSTRUCTION DIAGNOSTIC REPORT
+Generated: 2026-09-11T10:51:27.348458+00:00
+DB: C:\Users\Administrator\source\python\allweather\db\allweather.sqlite
+==============================================================================
+
+--- Scanner runs ---
+  equity_stock             STK        STK.US     n=0     ERRORS: [(165, 'Historical Market Data Service query message:no items retrieved')]
+  equity_etf               ETF.EQ.US  ETF.EQ.US  n=6   
+  fixed_income_etf         ETF.FI.US  ETF.FI.US  n=2   
+  govt_bond                BOND       BOND.GOVT.US n=0     ERRORS: [(162, 'Historical Market Data Service error message:Error: Market Scanner is not configured for one of the chosen locations.')]
+  equity_index_future      FUT.US     FUT.US     n=0     ERRORS: [(492, 'You must subscribe for additional permissions to obtain precise results for scanner.Parameter:Most Active;Real-Time Market Data:NYMEX, IPE, ENDEX, NYBOT, NYSELIFFE, CFE')]
+  rates_future             FUT.US     FUT.US     n=0     ERRORS: [(492, 'You must subscribe for additional permissions to obtain precise results for scanner.Parameter:Most Active;Real-Time Market Data:NYMEX, IPE, ENDEX, NYBOT, NYSELIFFE, CFE')]
+  metals_future            FUT.US     FUT.US     n=0     ERRORS: [(492, 'You must subscribe for additional permissions to obtain precise results for scanner.Parameter:Most Active;Real-Time Market Data:NYMEX, IPE, ENDEX, NYBOT, NYSELIFFE, CFE')]
+  energy_future            FUT.US     FUT.US     n=0     ERRORS: [(492, 'You must subscribe for additional permissions to obtain precise results for scanner.Parameter:Most Active;Real-Time Market Data:NYMEX, IPE, ENDEX, NYBOT, NYSELIFFE, CFE')]
+  agriculture_future       FUT.US     FUT.US     n=0     ERRORS: [(492, 'You must subscribe for additional permissions to obtain precise results for scanner.Parameter:Most Active;Real-Time Market Data:NYMEX, IPE, ENDEX, NYBOT, NYSELIFFE, CFE')]
+  commodity_index_future   FUT.US     FUT.US     n=0     ERRORS: [(492, 'You must subscribe for additional permissions to obtain precise results for scanner.Parameter:Most Active;Real-Time Market Data:NYMEX, IPE, ENDEX, NYBOT, NYSELIFFE, CFE')]
+  fx_future                FUT.US     FUT.US     n=0     ERRORS: [(492, 'You must subscribe for additional permissions to obtain precise results for scanner.Parameter:Most Active;Real-Time Market Data:NYMEX, IPE, ENDEX, NYBOT, NYSELIFFE, CFE')]
+
+--- Instruments by asset_class (distinct conid) ---
+  equity_etf               6
+  fixed_income_etf         2
+
+Total distinct instruments in universe: 8
+
+--- Sample rows (5 per asset_class) ---
+
+  [equity_etf]  (growth / mixed -- includes commodity & gold trust ETFs (GLD, SLV, DBC, ... are secType=STK here, not FUT))
+    TQQQ       USD   SMART    
+    SOXL       USD   SMART    
+    IDEV       USD   SMART    
+    KORU       USD   SMART    
+    SQQQ       USD   SMART    
+
+  [fixed_income_etf]  (rates / duration / credit (mixed -- see category field))
+    TLT        USD   SMART    
+    BIL        USD   SMART    
+
+--- Delisted instruments (SEC EDGAR Form 25 / 25-NSE) ---
+  Lookback window: 2016-09-13 -> 2026-09-11
+  EDGAR-reported availability vs pulled: {'25-NSE': {'available_in_edgar': 10000, 'pulled': 1965}}
+  Rows inserted this run: 1752
+  Total delisted_instruments rows in DB: 1752 (319 with a parsed ticker guess, 1433 name/CIK only)
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SURVIVORSHIP BIAS -- EXPLICIT STATEMENT (per pipeline requirement)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  The instruments table above is sourced ENTIRELY from live IBKR scanners and
+  therefore contains ONLY currently-listed, currently-tradeable contracts.
+  This is a liquidity-and-listedness-filtered subset of "all IBKR-tradeable
+  instruments," not the full universe -- there is no IBKR endpoint that
+  enumerates the full universe, and this pipeline does not pretend otherwise.
+
+  Any backtest run only against the `instruments` table inherits full
+  survivorship bias: names that went bankrupt, were acquired, delisted, or
+  had their ETF/fund liquidated are absent, which mechanically inflates
+  historical mean return and Sharpe versus what a real-time investor would
+  have experienced.
+
+  Partial mitigation implemented: the `delisted_instruments` table sources
+  company name + CIK + filing date for US equities that filed SEC Form 25 /
+  25-NSE (delisting notification) going back to 10 years. This is NAME
+  sourcing only -- it does not, and cannot via this method, supply PRICE
+  HISTORY for those names (IBKR will not serve bars for dead conids, and no
+  price vendor is wired in yet), so it does NOT by itself remove survivorship
+  bias from any return-based statistic downstream. It also does not cover:
+    - delistings before 2001 (EDGAR full text search coverage start)
+    - futures contract expiries/rolls
+    - closed/liquidated ETFs that didn't file Form 25
+    - non-US-listed delistings
+  Treat every downstream backtest as survivorship-biased until a priced
+  delisted-history vendor is integrated, and say so in any output that
+  quotes a historical return statistic.

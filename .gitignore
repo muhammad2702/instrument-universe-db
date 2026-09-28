@@ -1,0 +1,19 @@
+# ---- the database itself: rebuild it by running the pipeline ------------
+db/*.sqlite
+db/*.sqlite-journal
+db/*.sqlite-wal
+
+# ---- fetched / generated data ------------------------------------------
+data/scanner_parameters.xml
+data/*.parquet
+
+# ---- python -------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# ---- misc ---------------------------------------------------------------
+.vscode/
+.idea/

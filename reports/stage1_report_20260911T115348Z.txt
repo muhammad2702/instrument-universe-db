@@ -1,0 +1,117 @@
+==============================================================================
+STAGE 1 -- UNIVERSE CONSTRUCTION DIAGNOSTIC REPORT
+Generated: 2026-09-11T11:53:48.590418+00:00
+DB: C:\Users\Administrator\source\python\allweather\db\allweather.sqlite
+==============================================================================
+
+--- Scanner runs ---
+  equity_stock             STK        STK.US     n=50  
+  equity_stock             STK        STK.US     n=50  
+  equity_stock             STK        STK.US     n=50  
+  equity_stock             STK        STK.US     n=50  
+  equity_stock             STK        STK.US     n=50  
+  equity_stock             STK        STK.US     n=50  
+  equity_stock             STK        STK.US     n=50  
+  equity_stock             STK        STK.US     n=50  
+  equity_stock             STK        STK.US     n=50  
+  equity_stock             STK        STK.US     n=50  
+  equity_etf               ETF.EQ.US  ETF.EQ.US  n=50  
+  equity_etf               ETF.EQ.US  ETF.EQ.US  n=50  
+  equity_etf               ETF.EQ.US  ETF.EQ.US  n=50  
+  equity_etf               ETF.EQ.US  ETF.EQ.US  n=50  
+  equity_etf               ETF.EQ.US  ETF.EQ.US  n=50  
+  equity_etf               ETF.EQ.US  ETF.EQ.US  n=19  
+  equity_etf               ETF.EQ.US  ETF.EQ.US  n=50  
+  equity_etf               ETF.EQ.US  ETF.EQ.US  n=50  
+  equity_etf               ETF.EQ.US  ETF.EQ.US  n=50  
+  equity_etf               ETF.EQ.US  ETF.EQ.US  n=50  
+  fixed_income_etf         ETF.FI.US  ETF.FI.US  n=50  
+  fixed_income_etf         ETF.FI.US  ETF.FI.US  n=14  
+  fixed_income_etf         ETF.FI.US  ETF.FI.US  n=12  
+  fixed_income_etf         ETF.FI.US  ETF.FI.US  n=2   
+  fixed_income_etf         ETF.FI.US  ETF.FI.US  n=14  
+  fixed_income_etf         ETF.FI.US  ETF.FI.US  n=2   
+  fixed_income_etf         ETF.FI.US  ETF.FI.US  n=50  
+  fixed_income_etf         ETF.FI.US  ETF.FI.US  n=14  
+  fixed_income_etf         ETF.FI.US  ETF.FI.US  n=2   
+  fixed_income_etf         ETF.FI.US  ETF.FI.US  n=3   
+  equity_stock             STK        STK.US     n=50  
+  equity_stock             STK        STK.US     n=50  
+  equity_stock             STK        STK.US     n=50  
+  equity_stock             STK        STK.US     n=50  
+  equity_stock             STK        STK.US     n=50  
+  equity_stock             STK        STK.US     n=50  
+  equity_stock             STK        STK.US     n=50  
+  equity_stock             STK        STK.US     n=50  
+  equity_stock             STK        STK.US     n=50  
+  equity_stock             STK        STK.US     n=50  
+  equity_stock             STK        STK.US     n=50  
+  equity_stock             STK        STK.US     n=50  
+
+--- Instruments by asset_class (distinct conid) ---
+  equity_stock             534
+  equity_etf               142
+  fixed_income_etf         57
+
+Total distinct instruments in universe: 733
+  NOTE: asset_class is scan-order-dependent, not type-dependent -- a conid keeps the asset_class of whichever scan found it FIRST (ON CONFLICT does not overwrite it). E.g. SLV/TQQQ/SOXL surface in both the STK.US and ETF.EQ.US scans and land under 'equity_stock' simply because that scan ran first. This is a placeholder bucketing for Stage 1 diagnostics only -- real asset-class / quadrant classification belongs to Stage 3 (feature matrix) and Stage 5 (regime beta), not a scan-order label. Do not treat this column as authoritative.
+
+--- Sample rows (5 per asset_class) ---
+
+  [equity_etf]  (growth / mixed -- includes commodity & gold trust ETFs (GLD, SLV, DBC, ... are secType=STK here, not FUT))
+    EWH        USD   SMART    
+    XLI        USD   SMART    
+    XLK        USD   SMART    
+    XLU        USD   SMART    
+    IVV        USD   SMART    
+
+  [equity_stock]  (growth (broad cross-section, sub-sector unclassified; includes leveraged/inverse ETPs like TQQQ/SOXL which IBKR classifies as secType=STK -- these are structurally unsuitable for a geometric-mean/Kelly objective due to daily-reset volatility decay and MUST be explicitly flagged or excluded in Stage 6, not silently included))
+    ALB        USD   SMART    
+    AMD        USD   SMART    
+    CDNS       USD   SMART    
+    CVX        USD   SMART    
+    CW         USD   SMART    
+
+  [fixed_income_etf]  (rates / duration / credit (mixed -- see category field))
+    LQD        USD   SMART    
+    IEF        USD   SMART    
+    SHY        USD   SMART    
+    AGG        USD   SMART    
+    TIP        USD   SMART    
+
+--- Delisted instruments (SEC EDGAR Form 25 / 25-NSE) ---
+  Lookback window: 2016-09-13 -> 2026-09-11
+  EDGAR-reported availability vs pulled: {'25-NSE': {'available_in_edgar': 10000, 'pulled': 1965}}
+  Rows inserted this run: 1
+  Total delisted_instruments rows in DB: 1800 (330 with a parsed ticker guess, 1470 name/CIK only)
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+SURVIVORSHIP BIAS -- EXPLICIT STATEMENT (per pipeline requirement)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  The instruments table above is sourced ENTIRELY from live IBKR scanners and
+  therefore contains ONLY currently-listed, currently-tradeable contracts.
+  This is a liquidity-and-listedness-filtered subset of "all IBKR-tradeable
+  instruments," not the full universe -- there is no IBKR endpoint that
+  enumerates the full universe, and this pipeline does not pretend otherwise.
+
+  Any backtest run only against the `instruments` table inherits full
+  survivorship bias: names that went bankrupt, were acquired, delisted, or
+  had their ETF/fund liquidated are absent, which mechanically inflates
+  historical mean return and Sharpe versus what a real-time investor would
+  have experienced.
+
+  Partial mitigation implemented: the `delisted_instruments` table sources
+  company name + CIK + filing date for US equities that filed SEC Form 25 /
+  25-NSE (delisting notification) going back to 10 years. This is NAME
+  sourcing only -- it does not, and cannot via this method, supply PRICE
+  HISTORY for those names (IBKR will not serve bars for dead conids, and no
+  price vendor is wired in yet), so it does NOT by itself remove survivorship
+  bias from any return-based statistic downstream. It also does not cover:
+    - delistings before 2001 (EDGAR full text search coverage start)
+    - futures contract expiries/rolls
+    - closed/liquidated ETFs that didn't file Form 25
+    - non-US-listed delistings
+  Treat every downstream backtest as survivorship-biased until a priced
+  delisted-history vendor is integrated, and say so in any output that
+  quotes a historical return statistic.

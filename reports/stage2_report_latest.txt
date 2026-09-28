@@ -1,0 +1,80 @@
+==============================================================================
+STAGE 2 -- STATIONARITY BATTERY DIAGNOSTIC REPORT
+Generated: 2026-09-11T18:50:08.788749+00:00
+==============================================================================
+
+Instruments: 733 total, 685 with sufficient data (n_obs >= MIN_OBS=100), 48 flagged insufficient_data.
+
+--- Per-test success rate (non-NaN p-value / instruments with sufficient data) ---
+  dfgls_pvalue         684/685
+  kpss_pvalue          684/685
+  pp_pvalue            684/685
+  za_pvalue            684/685
+  vr2_pvalue           684/685
+  arch_lm_pvalue       684/685
+
+--- ADF(DFGLS)/KPSS four-way classification (RAW p-values, alpha=0.05) ---
+  stationary_clean                 579
+  uninformative_low_power          64
+  uninformative_missing_data       49
+  conflicting_or_frac_integrated   34
+  unit_root_clean                  7
+
+--- ADF(DFGLS)/KPSS four-way classification (BH-FDR-ADJUSTED p-values, alpha=0.05) ---
+  stationary_clean                 610
+  uninformative_low_power          74
+  uninformative_missing_data       49
+
+  NOTE: raw vs adjusted classification counts differing materially means the
+  raw-p-value crosstab above was meaningfully inflated by multiple-testing false
+  positives (expected: ~34 false rejections at alpha=0.05 across 685 assets per test, by construction, before correction).
+
+--- ARCH effect (conditional heteroskedasticity) ---
+  538/685 instruments reject 'no ARCH effect' at BH-adjusted alpha=0.05
+  This is the number that actually matters for covariance estimation: a large
+  fraction here means volatility clustering is pervasive and a single static
+  covariance matrix will be stale for most of the universe -- motivates the
+  regime-conditional covariance work in Stage 5, not a reason to drop assets now.
+
+--- Hurst exponent distribution (DFA, more robust than R/S at short lengths) ---
+  n=684  mean=0.516  median=0.514  std=0.064  min=0.025  max=0.853
+  H < 0.45 (mean-reverting-ish): 64
+  0.45 <= H <= 0.55 (~random walk): 456
+  H > 0.55 (trending/long-memory-ish): 164
+
+--- Sample flagged rows (conflicting/uninformative under BH-adjusted p-values) ---
+  FDS        class=uninformative_low_power          dfgls_p=0.254 kpss_p=0.100 n_obs=5024
+  RIO        class=uninformative_low_power          dfgls_p=0.217 kpss_p=0.100 n_obs=5024
+  SPAB       class=uninformative_low_power          dfgls_p=0.172 kpss_p=0.100 n_obs=4830
+  SPXL       class=uninformative_low_power          dfgls_p=0.138 kpss_p=0.100 n_obs=3599
+  TNA        class=uninformative_low_power          dfgls_p=0.154 kpss_p=0.100 n_obs=4487
+  TECL       class=uninformative_low_power          dfgls_p=0.219 kpss_p=0.100 n_obs=4458
+  SCHB       class=uninformative_low_power          dfgls_p=0.120 kpss_p=0.100 n_obs=4236
+  VCSH       class=uninformative_low_power          dfgls_p=0.116 kpss_p=0.100 n_obs=4223
+  SPSB       class=uninformative_low_power          dfgls_p=0.085 kpss_p=0.100 n_obs=4205
+  UDOW       class=uninformative_low_power          dfgls_p=0.263 kpss_p=0.100 n_obs=4168
+  ... and 64 more (see parquet for full list)
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+CRITICAL CAVEAT (per pipeline requirement) -- READ BEFORE USING THIS TABLE
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+  Stationarity is a DATA-QUALITY GATE, not an alpha filter. A stationary
+  return series is not a profitable one, and an asset flagged
+  'conflicting_or_frac_integrated' or 'uninformative_low_power' above is not
+  thereby a bad investment -- it means this asset's statistical properties
+  (regime-switching variance, a structural break, fractional integration,
+  or just too little/too noisy data to tell) make a single static covariance
+  estimate on its returns unreliable. That is a signal to downweight or
+  special-case the asset in the covariance step (Stage 4), NOT a signal to
+  select it in or out of the portfolio on return grounds. Selecting assets
+  because they pass this battery would introduce selection bias into every
+  downstream stage.
+
+  Also note: ADF/PP/DFGLS overwhelmingly reject the unit-root null on
+  returns (as expected -- returns are levels-stationary almost by
+  construction; prices are I(1), returns are the differenced series). The
+  informative tests in this battery are KPSS (confirmatory pair), ARCH-LM
+  (variance stability -- the one that actually matters for Sigma), Zivot-
+  Andrews (structural breaks), variance ratio (random-walk-in-PRICE check),
+  and Hurst (long memory). Do not over-read the unit-root columns alone.
